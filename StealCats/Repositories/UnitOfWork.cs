@@ -3,14 +3,13 @@ using StealTheCats.Interfaces;
 
 namespace StealTheCats.Repositories
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private ApplicationDBContext _dbContext;
-        private Dictionary<Type, object> _repositories;
+        private readonly Dictionary<Type, object> _repositories = new();
         public UnitOfWork(ApplicationDBContext DBContext)
         {
             _dbContext = DBContext;
-            _repositories = new Dictionary<Type, object>();
         }
 
         public IRepository<T> GetRepository<T>() where T : class
@@ -20,14 +19,19 @@ namespace StealTheCats.Repositories
                 return (IRepository<T>)_repositories[typeof(T)];
             }
 
-            var repository = new Repository<T>(_dbContext);
+            var repository = new EFRepository<T>(_dbContext);
             _repositories.Add(typeof(T), repository);
             return repository;
         }
 
-        public void Save()
+        public async Task SaveAsync()
         {
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public void Dispose()
+        {
+            _dbContext.Dispose();
         }
     }
 }

@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "xMD72zUNcns=",
+  "dgSpecHash": "YFRKW0jgY90=",
   "success": true,
   "projectFilePath": "C:\\Users\\Johnn\\source\\repos\\StealCats\\StealCats\\StealTheCats.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Johnn\\.nuget\\packages\\automapper\\14.0.0\\automapper.14.0.0.nupkg.sha512",
     "C:\\Users\\Johnn\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Johnn\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
     "C:\\Users\\Johnn\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",

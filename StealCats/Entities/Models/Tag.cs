@@ -12,7 +12,7 @@ namespace StealTheCats.Entities.Models
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Timestamp is required")]
-        public DateTimeOffset Created { get; set; }
+        public DateTime Created { get; set; }
 
         public ICollection<Cat> Cats { get; } = [];
     }

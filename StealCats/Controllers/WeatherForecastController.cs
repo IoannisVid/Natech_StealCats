@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StealTheCats;
+using StealTheCats.Entities.Models;
+using StealTheCats.Repositories;
 
 namespace StealCats.Controllers
 {
