@@ -1,0 +1,41 @@
+## Ignore Visual Studio temporary files, build results, and user settings
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Rider
+.idea/
+
+## Others
+*.log
+*.tlog
+*.cache
+*.pdb
+*.tmp
+*.dbmdl
+*.bak
+*.swp
+
+# Auto-generated files
+Generated\ Files/
