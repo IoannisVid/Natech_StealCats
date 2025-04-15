@@ -1,6 +1,10 @@
-﻿using AutoMapper;
+﻿using System.Text.Json;
+using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using StealTheCats.Common;
 using StealTheCats.Entities.DataTransferObjects;
 using StealTheCats.Entities.Models;
 using StealTheCats.Interfaces;
@@ -14,19 +18,36 @@ namespace StealTheCats.Controllers
     public class CatsController : ControllerBase
     {
         private readonly ILogger<CatsController> _logger;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ICatService _catService;
         private readonly IMapper _mapper;
-        public CatsController(ILogger<CatsController> logger, IUnitOfWork unitOfWork, IMapper mapper)
+        public CatsController(ILogger<CatsController> logger, ICatService catService, IMapper mapper)
         {
             _logger = logger;
-            _unitOfWork = unitOfWork;
+            _catService = catService;
             _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCats([FromQuery] CatParameters parameters)
+        public async Task<IActionResult> GetCats([FromQuery] CatParameters QueryParam)
         {
-            return NotFound();
+            PagedList<CatDto> cats;
+            if (string.IsNullOrEmpty(QueryParam.Tag))
+                cats = await _catService.GetCatsAsync(QueryParam);
+            else
+                cats = await _catService.GetCatsByTagAsync(QueryParam);
+            var metadata = new
+            {
+                cats.TotalCount,
+                cats.PageSize,
+                cats.CurrentPage,
+                cats.TotalPages,
+                cats.HasNext,
+                cats.HasPrevious
+            };
+            Response.Headers.Add("Pagination", JsonSerializer.Serialize(metadata));
+            if (cats.Count == 0)
+                return NotFound();
+            return Ok(cats);
         }
 
         [HttpGet("{id}")]
@@ -34,7 +55,7 @@ namespace StealTheCats.Controllers
         {
             try
             {
-                var cat = await _unitOfWork.GetRepository<Cat>().GetByCondition(x => x.CatId.Equals(id)).Include(x => x.Tags).FirstOrDefaultAsync();
+                var cat = await _catService.GetCatById(id);
                 if (cat == null)
                 {
                     _logger.LogError($"Cat with id: {id}, hasn't been found in db.");
@@ -51,24 +72,6 @@ namespace StealTheCats.Controllers
                 _logger.LogError($"Something went wrong in Get action: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
-        }
-
-        // POST api/<StealTheCatsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<StealTheCatsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<StealTheCatsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
         }
     }
 }

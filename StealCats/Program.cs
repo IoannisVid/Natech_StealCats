@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using StealTheCats.Entities;
 using StealTheCats.Interfaces;
+using StealTheCats.Repositories;
+using StealTheCats.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextPool<ApplicationDBContext>(options =>
         options.UseSqlServer(""));
 
-builder.Services.AddScoped<IUnitOfWork, IUnitOfWork>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ICatService, CatService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

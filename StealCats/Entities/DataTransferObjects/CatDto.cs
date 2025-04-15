@@ -13,7 +13,6 @@ namespace StealTheCats.Entities.DataTransferObjects
         public string? Image { get; set; }
 
         public DateTime CreatedAt { get; set; }
-
-        public string? Temperament { get; set; }
+        public List<string> Tags { get; set; }
     }
 }
