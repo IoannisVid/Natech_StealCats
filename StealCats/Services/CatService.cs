@@ -16,7 +16,7 @@ namespace StealTheCats.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<Cat?> GetCatById(string id) => await _unitOfWork.GetRepository<Cat>()
+        public async Task<Cat?> GetCatByIdAsync(string id) => await _unitOfWork.GetRepository<Cat>()
             .GetByCondition(x => x.CatId.Equals(id)).Include(x => x.Tags).FirstOrDefaultAsync();
 
         public async Task<PagedList<CatDto>> GetCatsAsync(CatParameters QueryParam)
@@ -27,6 +27,7 @@ namespace StealTheCats.Services
 
             return new PagedList<CatDto>(dtoList, pagedList.TotalCount, pagedList.CurrentPage, pagedList.PageSize);
         }
+        
         public async Task<PagedList<CatDto>> GetCatsByTagAsync(CatParameters QueryParam)
         {
             var query = _unitOfWork.GetRepository<Tag>().GetByCondition(x => x.Name.Equals(QueryParam.Tag))
@@ -37,5 +38,33 @@ namespace StealTheCats.Services
             return new PagedList<CatDto>(dtoList, pagedList.TotalCount, pagedList.CurrentPage, pagedList.PageSize);
         }
 
+        public async Task CreateCatsAsync(List<CatImageDto> CatImages)
+        {
+            foreach (var catImage in CatImages)
+            {
+                if (await GetCatByIdAsync(catImage.Id) != null)
+                    continue;
+
+                var cat = _mapper.Map<Cat>(catImage);
+                foreach (var catBreed in catImage.Breeds)
+                {
+                    var tagName = catBreed.Temperament;
+
+                    var tag = await _unitOfWork.GetRepository<Tag>().GetByCondition(x => x.Name.Equals(catBreed.Temperament)).FirstOrDefaultAsync();
+                    if (tag == null)
+                    {
+                        tag = _mapper.Map<Tag>(catBreed);
+                        _unitOfWork.GetRepository<Tag>().Create(tag);
+                    }
+
+                    if (!cat.Tags.Any(t => t.Name.Equals(tagName)))
+                    {
+                        cat.Tags.Add(tag);
+                    }
+                }
+                _unitOfWork.GetRepository<Cat>().Create(cat);
+            }
+            await _unitOfWork.SaveAsync();
+        }
     }
 }

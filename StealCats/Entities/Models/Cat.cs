@@ -17,8 +17,8 @@ namespace StealTheCats.Entities.Models
         [Required(ErrorMessage = "Height of Image is required")]
         public int Height { get; set; }
 
-        [Required(ErrorMessage = "Cat Image url is required")]
-        public string Image { get; set; }
+        [Required(ErrorMessage = "Cat Image is required")]
+        public byte[] Image { get; set; }
 
         [Required(ErrorMessage = "Timestamp is required")]
         public DateTime Created { get; set; }
