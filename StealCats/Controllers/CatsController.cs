@@ -8,8 +8,6 @@ using StealTheCats.Entities.DataTransferObjects;
 using StealTheCats.Entities.Models;
 using StealTheCats.Interfaces;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace StealTheCats.Controllers
 {
     [Route("api/[controller]")]

@@ -19,12 +19,15 @@ namespace StealTheCats.Services
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get,
-                    "v1/images/search?&format=json&has_breeds=true&limit=25");
+                    "v1/images/search?size=med&format=json&has_breeds=true&limit=25");
 
                 var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 var json = await response.Content.ReadAsStringAsync();
-                List<CatImageDto> catImages = JsonSerializer.Deserialize<List<CatImageDto>>(json);
+                List<CatImageDto> catImages = JsonSerializer.Deserialize<List<CatImageDto>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
                 if(catImages.IsNullOrEmpty())
                 {
                     return new List<CatImageDto>();
