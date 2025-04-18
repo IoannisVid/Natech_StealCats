@@ -1,7 +1,7 @@
-﻿using AutoMapper;
+﻿using System.ComponentModel.DataAnnotations;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Primitives;
 using StealTheCats.Common;
 using StealTheCats.Entities.DataTransferObjects;
 using StealTheCats.Entities.Models;
@@ -14,14 +14,16 @@ namespace StealTheCats.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IMemoryCache _memoryCache;
+        private readonly ILogger<CatService> _logger;
         private readonly CacheInvalidationToken _token;
 
-        public CatService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache memoryCache, CacheInvalidationToken token)
+        public CatService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache memoryCache, CacheInvalidationToken token, ILogger<CatService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _memoryCache = memoryCache;
             _token = token;
+            _logger = logger;
         }
         public async Task<Cat?> GetCatByIdWithTagAsync(string id) => await _unitOfWork.GetRepository<Cat>()
             .GetByCondition(x => x.CatId.Equals(id)).Include(x => x.Tags).FirstOrDefaultAsync();
@@ -66,6 +68,9 @@ namespace StealTheCats.Services
                     continue;
 
                 var cat = _mapper.Map<Cat>(catImage);
+                if (!ValidateCat(cat))
+                    continue;
+
                 foreach (var catBreed in catImage.Breeds)
                 {
                     var Temperaments = catBreed.Temperament.Split(',');
@@ -90,6 +95,19 @@ namespace StealTheCats.Services
             }
             await _unitOfWork.SaveAsync();
             _token.Invalidate();
+        }
+        private bool ValidateCat(Cat cat)
+        {
+            var validationResults = new List<ValidationResult>();
+            var validationContext = new ValidationContext(cat);
+            bool isValidCat = Validator.TryValidateObject(cat, validationContext, validationResults, true);
+            if (!isValidCat)
+            {
+                _logger.LogError($"Incorrect structure for CatId:{cat.CatId}:");
+                validationResults.ForEach(err => _logger.LogError(err.ErrorMessage));
+                return false;
+            }
+            return true;
         }
     }
 }
