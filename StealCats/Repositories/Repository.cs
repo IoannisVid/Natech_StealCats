@@ -12,7 +12,7 @@ namespace StealTheCats.Repositories
         {
             DBContext = dbContext;
         }
-        public IQueryable<T> GetAll() => DBContext.Set<T>().AsNoTracking();
+        public IQueryable<T> GetAll(bool track = false) => track? DBContext.Set<T>() : DBContext.Set<T>().AsNoTracking();
         public IQueryable<T> GetByCondition(Expression<Func<T, bool>> expression) =>
             DBContext.Set<T>().Where(expression).AsNoTracking();
         public void Create(T entity) => DBContext.Set<T>().Add(entity);

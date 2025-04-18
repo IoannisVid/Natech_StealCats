@@ -8,7 +8,7 @@ namespace StealTheCats.Interfaces
     {
         Task<Cat?> GetCatByIdAsync(string id);
         Task<Cat?> GetCatByIdWithTagAsync(string id);
-        Task<Dictionary<string, Cat>> GetCatDictAsync();
+        Task<Dictionary<string, Cat>> GetCatDictAsync(bool track = false);
         Task<PagedList<CatDto>> GetCatsAsync(CatParameters QueryParam);
         Task<PagedList<CatDto>> GetCatsByTagAsync(CatParameters QueryParam);
         Task CreateCatsAsync(List<CatImageDto> CatImages);

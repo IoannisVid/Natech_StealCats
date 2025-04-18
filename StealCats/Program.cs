@@ -10,13 +10,13 @@ using StealTheCats.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddDbContextPool<ApplicationDBContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("connectionString");
     options.UseSqlServer(connectionString);
 });
 
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICatService, CatService>();
 builder.Services.Configure<CatApiOptions>(builder.Configuration.GetSection("CatApi"));
@@ -29,6 +29,7 @@ builder.Services.AddHttpClient<ICatApiService, CatApiService>((sp, client) =>
 });
 builder.Services.AddSingleton<CacheInvalidationToken>();
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

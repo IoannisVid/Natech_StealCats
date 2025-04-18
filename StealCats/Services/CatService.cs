@@ -30,12 +30,11 @@ namespace StealTheCats.Services
         public async Task<Cat?> GetCatByIdAsync(string id) => await _unitOfWork.GetRepository<Cat>()
             .GetByCondition(x => x.CatId.Equals(id)).FirstOrDefaultAsync();
 
-        public async Task<Dictionary<string, Cat>> GetCatDictAsync()
+        public async Task<Dictionary<string, Cat>> GetCatDictAsync(bool track = false)
         {
-            var catList = await _unitOfWork.GetRepository<Cat>().GetAll().Include(x => x.Tags).ToListAsync();
+            var catList = await _unitOfWork.GetRepository<Cat>().GetAll(track).Include(x => x.Tags).ToListAsync();
             return catList.ToDictionary(x => x.CatId, x => x);
         }
-
         public async Task<PagedList<CatDto>> GetCatsAsync(CatParameters QueryParam)
         {
             var query = _unitOfWork.GetRepository<Cat>().GetAll().Include(x => x.Tags);
@@ -44,7 +43,6 @@ namespace StealTheCats.Services
 
             return new PagedList<CatDto>(dtoList, pagedList.TotalCount, pagedList.CurrentPage, pagedList.PageSize);
         }
-
         public async Task<PagedList<CatDto>> GetCatsByTagAsync(CatParameters QueryParam)
         {
             var query = _unitOfWork.GetRepository<Tag>().GetByCondition(x => x.Name.Equals(QueryParam.Tag))
@@ -58,16 +56,21 @@ namespace StealTheCats.Services
         public async Task CreateCatsAsync(List<CatImageDto> CatImages)
         {
             if (!_memoryCache.TryGetValue("CatsDict", out Dictionary<string, Cat> catsDict))
-                catsDict = await GetCatDictAsync();
+                catsDict = await GetCatDictAsync(true);
             if (!_memoryCache.TryGetValue("Tags", out List<Tag> existingTags))
-                existingTags = await _unitOfWork.GetRepository<Tag>().GetAll().ToListAsync();
-
+                existingTags = await _unitOfWork.GetRepository<Tag>().GetAll(true).ToListAsync();
+            
             foreach (var catImage in CatImages)
-            {
-                if (catsDict.ContainsKey(catImage.Id))
-                    continue;
+            {                
+                bool update = false;
+                if (catsDict.TryGetValue(catImage.Id, out Cat cat))
+                {
+                    update = true;
+                    _mapper.Map(catImage, cat);
+                }
+                else
+                    cat = _mapper.Map<Cat>(catImage);
 
-                var cat = _mapper.Map<Cat>(catImage);
                 if (!ValidateCat(cat))
                     continue;
 
@@ -90,12 +93,19 @@ namespace StealTheCats.Services
                         if (!cat.Tags.Any(t => t.Name.Equals(temp.Trim())))
                             cat.Tags.Add(tag);
                     }
+                    var removeTags = cat.Tags.Where(x => Temperaments.Any(y => !x.Name.Equals(y)));
+                    foreach(var remTag in removeTags)
+                        cat.Tags.Remove(remTag);
                 }
-                _unitOfWork.GetRepository<Cat>().Create(cat);
+                if (update)
+                    _unitOfWork.GetRepository<Cat>().Update(cat);
+                else
+                    _unitOfWork.GetRepository<Cat>().Create(cat);
             }
             await _unitOfWork.SaveAsync();
             _token.Invalidate();
         }
+
         private bool ValidateCat(Cat cat)
         {
             var validationResults = new List<ValidationResult>();

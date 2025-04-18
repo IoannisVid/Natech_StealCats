@@ -11,7 +11,5 @@ namespace StealTheCats.Entities.DataTransferObjects
         public int Height { get; set; }
 
         public DateTime CreatedAt { get; set; }
-
-        //public List<string> Tags { get; set; }
     }
 }

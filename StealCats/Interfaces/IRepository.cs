@@ -4,7 +4,7 @@ namespace StealTheCats.Interfaces
 {
     public interface IRepository<T>
     {
-        IQueryable<T> GetAll();
+        IQueryable<T> GetAll(bool track = false);
         IQueryable<T> GetByCondition(Expression<Func<T, bool>> expression);
         void Create(T entity);
         void Update(T entity);
