@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using StealTheCats.Common;
 using StealTheCats.Entities.DataTransferObjects;
@@ -18,12 +19,17 @@ namespace StealTheCats.Controllers
         private readonly ICatService _catService;
         private readonly ICatApiService _catApiService;
         private readonly IMapper _mapper;
-        public CatsController(ILogger<CatsController> logger, ICatService catService, IMapper mapper, ICatApiService catApiService)
+        private readonly IMemoryCache _memoryCache;
+        private readonly CacheInvalidationToken _token;
+
+        public CatsController(ILogger<CatsController> logger, ICatService catService, IMapper mapper, ICatApiService catApiService, IMemoryCache memoryCache, CacheInvalidationToken token)
         {
             _logger = logger;
             _catService = catService;
             _mapper = mapper;
             _catApiService = catApiService;
+            _memoryCache = memoryCache;
+            _token = token;
         }
 
         [HttpGet]
@@ -31,11 +37,20 @@ namespace StealTheCats.Controllers
         {
             try
             {
-                PagedList<CatDto> cats;
-                if (string.IsNullOrEmpty(QueryParam.Tag))
-                    cats = await _catService.GetCatsAsync(QueryParam);
-                else
-                    cats = await _catService.GetCatsByTagAsync(QueryParam);
+                string cacheKey = QueryParam.GetKeyString();
+                if (!_memoryCache.TryGetValue(cacheKey, out PagedList<CatDto> cats))
+                {
+                    if (string.IsNullOrEmpty(QueryParam.Tag))
+                        cats = await _catService.GetCatsAsync(QueryParam);
+                    else
+                        cats = await _catService.GetCatsByTagAsync(QueryParam);
+                }
+                var options = new MemoryCacheEntryOptions
+                {
+                    SlidingExpiration = new TimeSpan(0, 5, 0)
+                };
+                options.AddExpirationToken(new CancellationChangeToken(_token.Token));
+                _memoryCache.Set(cacheKey, cats, options);
                 var metadata = new
                 {
                     cats.TotalCount,
@@ -62,7 +77,13 @@ namespace StealTheCats.Controllers
         {
             try
             {
-                var cat = await _catService.GetCatByIdAsync(id);
+                var cacheKey = $"Cat:{id}";
+                var cat = await _memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                {
+                    entry.SlidingExpiration = new TimeSpan(0, 10, 0);
+                    entry.AddExpirationToken(new CancellationChangeToken(_token.Token));
+                    return await _catService.GetCatByIdAsync(id);
+                });
                 if (cat == null)
                 {
                     _logger.LogError($"Cat with id: {id}, hasn't been found in db.");

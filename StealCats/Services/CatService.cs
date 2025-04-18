@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using StealTheCats.Common;
 using StealTheCats.Entities.DataTransferObjects;
 using StealTheCats.Entities.Models;
@@ -11,15 +13,26 @@ namespace StealTheCats.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public CatService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IMemoryCache _memoryCache;
+        private readonly CacheInvalidationToken _token;
+
+        public CatService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache memoryCache, CacheInvalidationToken token)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _memoryCache = memoryCache;
+            _token = token;
         }
         public async Task<Cat?> GetCatByIdWithTagAsync(string id) => await _unitOfWork.GetRepository<Cat>()
             .GetByCondition(x => x.CatId.Equals(id)).Include(x => x.Tags).FirstOrDefaultAsync();
         public async Task<Cat?> GetCatByIdAsync(string id) => await _unitOfWork.GetRepository<Cat>()
             .GetByCondition(x => x.CatId.Equals(id)).FirstOrDefaultAsync();
+
+        public async Task<Dictionary<string, Cat>> GetCatDictAsync()
+        {
+            var catList = await _unitOfWork.GetRepository<Cat>().GetAll().Include(x => x.Tags).ToListAsync();
+            return catList.ToDictionary(x => x.CatId, x => x);
+        }
 
         public async Task<PagedList<CatDto>> GetCatsAsync(CatParameters QueryParam)
         {
@@ -33,9 +46,8 @@ namespace StealTheCats.Services
         public async Task<PagedList<CatDto>> GetCatsByTagAsync(CatParameters QueryParam)
         {
             var query = _unitOfWork.GetRepository<Tag>().GetByCondition(x => x.Name.Equals(QueryParam.Tag))
-                .Include(x => x.Cats).SelectMany(x=>x.Cats);//.ThenInclude(x => x.Tags);
+                .Include(x => x.Cats).SelectMany(x => x.Cats);
             var pagedList = await PagedList<Cat>.ToPagedList(query, QueryParam.PageNumber, QueryParam.PageSize);
-
             var dtoList = _mapper.Map<List<CatDto>>(pagedList.ToList());
 
             return new PagedList<CatDto>(dtoList, pagedList.TotalCount, pagedList.CurrentPage, pagedList.PageSize);
@@ -43,10 +55,14 @@ namespace StealTheCats.Services
 
         public async Task CreateCatsAsync(List<CatImageDto> CatImages)
         {
-            List<Tag> existingTags = await _unitOfWork.GetRepository<Tag>().GetAll().ToListAsync();
+            if (!_memoryCache.TryGetValue("CatsDict", out Dictionary<string, Cat> catsDict))
+                catsDict = await GetCatDictAsync();
+            if (!_memoryCache.TryGetValue("Tags", out List<Tag> existingTags))
+                existingTags = await _unitOfWork.GetRepository<Tag>().GetAll().ToListAsync();
+
             foreach (var catImage in CatImages)
             {
-                if (await GetCatByIdAsync(catImage.Id) != null)
+                if (catsDict.ContainsKey(catImage.Id))
                     continue;
 
                 var cat = _mapper.Map<Cat>(catImage);
@@ -61,7 +77,7 @@ namespace StealTheCats.Services
                             tag = existTag;
                         else
                         {
-                            tag = new Tag { Name = temp.Trim() };
+                            tag = new Tag { Name = temp.Trim(), Created = DateTime.UtcNow };
                             _unitOfWork.GetRepository<Tag>().Create(tag);
                             existingTags.Add(tag);
                         }
@@ -73,6 +89,7 @@ namespace StealTheCats.Services
                 _unitOfWork.GetRepository<Cat>().Create(cat);
             }
             await _unitOfWork.SaveAsync();
+            _token.Invalidate();
         }
     }
 }

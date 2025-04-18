@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using StealTheCats.Common;
 using StealTheCats.Entities;
 using StealTheCats.Entities.Models;
 using StealTheCats.Interfaces;
@@ -26,6 +27,7 @@ builder.Services.AddHttpClient<ICatApiService, CatApiService>((sp, client) =>
     client.DefaultRequestHeaders.Add("x-api-key", options.ApiKey);
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
+builder.Services.AddSingleton<CacheInvalidationToken>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
