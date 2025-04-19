@@ -59,9 +59,9 @@ namespace StealTheCats.Services
                 catsDict = await GetCatDictAsync(true);
             if (!_memoryCache.TryGetValue("Tags", out List<Tag> existingTags))
                 existingTags = await _unitOfWork.GetRepository<Tag>().GetAll(true).ToListAsync();
-            
+
             foreach (var catImage in CatImages)
-            {                
+            {
                 bool update = false;
                 if (catsDict.TryGetValue(catImage.Id, out Cat cat))
                 {
@@ -94,7 +94,7 @@ namespace StealTheCats.Services
                             cat.Tags.Add(tag);
                     }
                     var removeTags = cat.Tags.Where(x => Temperaments.Any(y => !x.Name.Equals(y)));
-                    foreach(var remTag in removeTags)
+                    foreach (var remTag in removeTags)
                         cat.Tags.Remove(remTag);
                 }
                 if (update)

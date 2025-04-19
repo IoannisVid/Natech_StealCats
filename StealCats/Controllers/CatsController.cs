@@ -44,13 +44,13 @@ namespace StealTheCats.Controllers
                         cats = await _catService.GetCatsAsync(QueryParam);
                     else
                         cats = await _catService.GetCatsByTagAsync(QueryParam);
+
+                    var cacheEntry = _memoryCache.CreateEntry(cacheKey);
+                    cacheEntry.Value = cats;
+                    cacheEntry.SlidingExpiration = new TimeSpan(0, 5, 0);
+                    cacheEntry.ExpirationTokens.Add(new CancellationChangeToken(_token.Token));
+                    cacheEntry.Dispose();
                 }
-                var options = new MemoryCacheEntryOptions
-                {
-                    SlidingExpiration = new TimeSpan(0, 5, 0)
-                };
-                options.AddExpirationToken(new CancellationChangeToken(_token.Token));
-                _memoryCache.Set(cacheKey, cats, options);
                 var metadata = new
                 {
                     cats.TotalCount,
@@ -78,12 +78,18 @@ namespace StealTheCats.Controllers
             try
             {
                 var cacheKey = $"Cat:{id}";
-                var cat = await _memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                if (!_memoryCache.TryGetValue(cacheKey, out Cat cat))
                 {
-                    entry.SlidingExpiration = new TimeSpan(0, 10, 0);
-                    entry.AddExpirationToken(new CancellationChangeToken(_token.Token));
-                    return await _catService.GetCatByIdAsync(id);
-                });
+                    cat = await _catService.GetCatByIdAsync(id);
+                    if (cat != null)
+                    {
+                        var entry = _memoryCache.CreateEntry(cacheKey);
+                        entry.Value = cat;
+                        entry.SlidingExpiration = TimeSpan.FromMinutes(10);
+                        entry.ExpirationTokens.Add(new CancellationChangeToken(_token.Token));
+                        entry.Dispose();
+                    }
+                }
                 if (cat == null)
                 {
                     _logger.LogError($"Cat with id: {id}, hasn't been found in db.");
