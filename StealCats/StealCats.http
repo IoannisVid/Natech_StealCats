@@ -1,6 +1,6 @@
 @StealCats_HostAddress = http://localhost:5228
 
-GET {{StealCats_HostAddress}}/weatherforecast/
+GET {{StealCats_HostAddress}}/cats
 Accept: application/json
 
 ###
