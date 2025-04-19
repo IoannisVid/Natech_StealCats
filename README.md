@@ -27,6 +27,7 @@ The project follows a clean architecture using repository patterns with SQL Serv
 ```
 ### 2. Configure the Database
 
+In appsettings.json enter your connectionString
 ```json
 "ConnectionStrings": {
   "connectionString": "Server=YOUR_SERVER_NAME;Database=StealCats;Trusted_Connection=True;TrustServerCertificate=True;"
