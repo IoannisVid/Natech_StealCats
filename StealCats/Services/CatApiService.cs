@@ -19,7 +19,7 @@ namespace StealTheCats.Services
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get,
-                    "v1/images/search?size=med&format=json&has_breeds=true&limit=5");
+                    "v1/images/search?size=med&format=json&has_breeds=true&limit=25");
 
                 var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();

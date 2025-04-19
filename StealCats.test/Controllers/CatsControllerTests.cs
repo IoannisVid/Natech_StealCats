@@ -108,7 +108,6 @@ namespace StealCats.test.Controllers
         [Fact]
         public async Task GetCats_WithTag_ReturnsOk_WhenCacheHit()
         {
-            // Arrange
             var queryParam = new CatParameters() { Tag = "Active" };
             var cacheKey = queryParam.GetKeyString();
             var catList = new PagedList<CatDto>(new List<CatDto>

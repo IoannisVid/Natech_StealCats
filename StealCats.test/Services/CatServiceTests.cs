@@ -113,7 +113,7 @@ namespace StealCats.test.Services
                 { "efgh", new Cat { CatId = "efgh" } }
             };
 
-            // Mocks for Memory Cache
+
             object dummyCat = catsDict;
             _mockMemoryCache.Setup(m => m.TryGetValue("CatsDict", out dummyCat)).Returns(true);
 
@@ -126,10 +126,10 @@ namespace StealCats.test.Services
             var mockTagRepo = new Mock<IRepository<Tag>>();
             _mockUnitOfWork.Setup(u => u.GetRepository<Tag>()).Returns(mockTagRepo.Object);
 
-            // Mock Create method (create new Cat or update)
+
             mockCatRepo.Setup(r => r.Create(It.IsAny<Cat>())).Verifiable();
             mockCatRepo.Setup(r => r.Update(It.IsAny<Cat>())).Verifiable();
-            // Mock SaveAsync call to verify it’s called at the end
+
             _mockUnitOfWork.Setup(u => u.SaveAsync()).Returns(Task.CompletedTask);
             _mockMapper.Setup(m => m.Map<Cat>(catImageDto)).Returns(cat);
 
@@ -141,6 +141,5 @@ namespace StealCats.test.Services
             mockCatRepo.Verify(r => r.Update(It.IsAny<Cat>()), Times.Never);
             _mockUnitOfWork.Verify(u => u.SaveAsync(), Times.Once);
         }
-
     }
 }

@@ -10,7 +10,6 @@ namespace StealTheCats
         {
             CreateMap<Cat, CatDto>()
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.Created));
-                //.ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags.Select(c => c.Name).ToList()));
 
             CreateMap<CatImageDto, Cat>()
             .ForMember(dest => dest.CatId, opt => opt.MapFrom(src => src.Id))
