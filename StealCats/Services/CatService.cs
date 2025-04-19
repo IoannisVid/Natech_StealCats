@@ -45,8 +45,7 @@ namespace StealTheCats.Services
         }
         public async Task<PagedList<CatDto>> GetCatsByTagAsync(CatParameters QueryParam)
         {
-            var query = _unitOfWork.GetRepository<Tag>().GetByCondition(x => x.Name.ToLower().Equals(QueryParam.Tag.ToLower()))
-                .Include(x => x.Cats).SelectMany(x => x.Cats);
+            var query = _unitOfWork.GetRepository<Cat>().GetByCondition(x => x.Tags.Any(x => x.Name.ToLower().Equals(QueryParam.Tag.ToLower())));
             var pagedList = await PagedList<Cat>.ToPagedList(query, QueryParam.PageNumber, QueryParam.PageSize);
             var dtoList = _mapper.Map<List<CatDto>>(pagedList.ToList());
 
